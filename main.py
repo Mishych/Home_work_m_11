@@ -161,7 +161,7 @@ if __name__ == "__main__":
     print(john_record)
     john_record.add_birthaday("2010-11-10")
     print(john_record.days_to_bd())
-    # print(john_record)
+    print(john_record)
 
     # # Додавання запису John до адресної книги
     # book.add_record(john_record)
