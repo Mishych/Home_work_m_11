@@ -40,29 +40,25 @@ class Phone(Field):
     @staticmethod
     def check_number(phone_number):
         return len(phone_number) == 10 and phone_number.isdigit()
-    
-form = '%Y-%m-%d'
 
 class Birthday(Field):
-    def __init__(self, birthday):
-        self._birthday = None
-        if birthday:
-            self.birthday = birthday
+    form = '%Y-%m-%d'
+    
+    def __init__(self, value):
+        self._value = None
+        self.value = value
     
     @property
-    def birthday(self):
-        return self._birthday
+    def value(self):
+        return self._value
     
-    @birthday.setter
-    def birthday(self, new_bd):
-        try:
-            self._birthday = datetime.strptime(new_bd, form)
-        except ValueError as e:
-            return e
+    @value.setter
+    def value(self, new_bd):
+        self._value = datetime.strptime(new_bd, self.form)
         
     def __str__(self):
-        if self._birthday:
-            return self._birthday.strftime(form)
+        if self._value:
+            return self._value.strftime(self.form)
         else:
             return "Birthday not setеееее"
 
@@ -71,27 +67,27 @@ class Record:
     def __init__(self, name, birthday = None):
         self.name = Name(name)
         self.phones = []
-        self.birthday = Birthday(birthday)
+        self.birthday = Birthday(birthday) if birthday else birthday
 
     def add_phone(self, phone_number):
         phone = phone_number
         self.phones.append(Phone(phone))
         
-    def add_birthaday(self, bd):
-        self.barthday = Birthday(bd)
-        return self.barthday
+    def add_birthday(self, bd):
+        self.birthday = Birthday(bd)
+        return self.birthday
         
     def days_to_bd(self):
         if not self.birthday:
             return "Birthday not set"    
         
         now = datetime.now()  
-        bd = datetime.strptime(self.birthday, form)
+        bd = self.birthday.value
         certain_year = now.year
         bd = bd.replace(year = certain_year)
-        if bd > now:
+        if bd < now:
             bd = bd.replace(year = certain_year + 1)
-        days_to_bdd = (bd - now).days
+        days_to_bdd = (bd.date() - now.date()).days
         
         return days_to_bdd
         
@@ -126,7 +122,7 @@ class Record:
         phone_numbers = ', '.join(str(phone) for phone in self.phones)
         birthday = self.birthday if self.birthday else "not set"
         
-        return f'{self.name.name} - {phone_numbers}: days to birthday - {birthday}'
+        return f'{self.name.name} - {phone_numbers}, birthday - {birthday}'
         # return f"Contact name: {self.name.value}, phones: {'; '.join(p for p in self.phones)}"
     
 class AddressBook(UserDict):
@@ -159,7 +155,7 @@ if __name__ == "__main__":
     john_record.add_phone("1234567890")
     john_record.add_phone("5555555555")
     print(john_record)
-    john_record.add_birthaday("2010-11-10")
+    john_record.add_birthday("2010-11-10")
     print(john_record.days_to_bd())
     print(john_record)
 
