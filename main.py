@@ -41,13 +41,12 @@ class Phone(Field):
     def check_number(phone_number):
         return len(phone_number) == 10 and phone_number.isdigit()
     
-form = '%Y-%m-%d'
-
 class Birthday(Field):
     def __init__(self, birthday):
         self._birthday = None
-        if birthday:
-            self.birthday = birthday
+        self.birthday = birthday
+            
+    form = '%Y-%m-%d'
     
     @property
     def birthday(self):
@@ -55,48 +54,41 @@ class Birthday(Field):
     
     @birthday.setter
     def birthday(self, new_bd):
-        try:
-            self._birthday = datetime.strptime(new_bd, form)
-        except ValueError as e:
-            return e
+        self._birthday = datetime.strptime(new_bd, self.form)
         
     def __str__(self):
         if self._birthday:
-            return self._birthday.strftime(form)
+            return self._birthday.strftime(self.form)
         else:
-            return "Birthday not setеееее"
-
-        
+            return "Birthday not set!"
+      
 class Record:
     def __init__(self, name, birthday = None):
         self.name = Name(name)
         self.phones = []
-        self.birthday = Birthday(birthday)
+        self.birthday = Birthday(birthday) if birthday else birthday
 
     def add_phone(self, phone_number):
         phone = phone_number
         self.phones.append(Phone(phone))
         
-    def add_birthaday(self, bd):
-        self.barthday = Birthday(bd)
-        return self.barthday
+    def add_birthday(self, bd):
+        self.birthday = Birthday(bd)
+        return self.birthday
         
     def days_to_bd(self):
         if not self.birthday:
             return "Birthday not set"    
         
         now = datetime.now()  
-        bd = datetime.strptime(self.birthday, form)
+        bd = self.birthday.birthday
         certain_year = now.year
         bd = bd.replace(year = certain_year)
-        if bd > now:
+        if bd < now:
             bd = bd.replace(year = certain_year + 1)
-        days_to_bdd = (bd - now).days
+        days_to_bdd = (bd.date() - now.date()).days
         
-        return days_to_bdd
-        
-    def printt(self):
-        return self.phones
+        return f"{days_to_bdd} days before the birthday"
        
     def remove_phone(self, phone):
         for el in self.phones:
@@ -109,7 +101,7 @@ class Record:
         for ind, phone in enumerate(self.phones):          
             if phone.value == old_phone:
                 self.phones[ind] = Phone(new_phone)
-                return f"Phone number has been updated for {self.name.value}"
+                return f"Phone number has been updated for {self.name.name}"
         raise ValueError
     
     def find_phone(self, phone_to_find):
@@ -117,19 +109,38 @@ class Record:
             if phone.value == phone_to_find:
                 return phone
         return None
-    
-    def find_birthday(self, bd_to_find):
-        pass
-
-
+   
     def __str__(self):
         phone_numbers = ', '.join(str(phone) for phone in self.phones)
         birthday = self.birthday if self.birthday else "not set"
         
-        return f'{self.name.name} - {phone_numbers}: days to birthday - {birthday}'
-        # return f"Contact name: {self.name.value}, phones: {'; '.join(p for p in self.phones)}"
+        return f'{self.name.name} - {phone_numbers}, birthday - {birthday}'
+    
+class AddressBookIterator:
+    def __init__(self, address_book, per_page = 10):
+        self.address_book = address_book
+        self.keys = list(address_book.data.keys())
+        self.per_page = per_page
+        self.current_page = 0
+
+    def __next__(self):
+        start_idx = self.current_page * self.per_page
+        end_idx = (self.current_page + 1) * self.per_page
+
+        if start_idx >= len(self.keys):
+            raise StopIteration
+
+        page_keys = self.keys[start_idx:end_idx]
+        page_records = [self.address_book.data[key] for key in page_keys]
+
+        self.current_page += 1
+
+        return page_records
     
 class AddressBook(UserDict):
+    def __iter__(self):
+        return AddressBookIterator(self)
+    
     def add_record(self, record: Record):
         self.data[record.name.name] = record
          
@@ -145,38 +156,37 @@ class AddressBook(UserDict):
         return f"{name} is not in the AddressBook"
            
 if __name__ == "__main__":
-
-    # bd = Birthday("2010-12-12")
-    # print(bd)
-    # dat = datetime.now()
-    # certain_year = dat.year3
-    # print(dat)
     # Створення нової адресної книги
-    # book = AddressBook()
+    book = AddressBook()
 
     # Створення запису для John
     john_record = Record("John")
     john_record.add_phone("1234567890")
     john_record.add_phone("5555555555")
+    john_record.add_birthday("2010-11-10")
     print(john_record)
-    john_record.add_birthaday("2010-11-10")
     print(john_record.days_to_bd())
-    print(john_record)
 
     # # Додавання запису John до адресної книги
-    # book.add_record(john_record)
+    book.add_record(john_record)
 
     # # Створення та додавання нового запису для Jane
-    # jane_record = Record("Jane")
-    # jane_record.add_phone("9876543210")
-    # book.add_record(jane_record)
+    jane_record = Record("Jane")
+    jane_record.add_phone("9876543210")
+    jane_record.add_birthday("2004-11-11")
+    
+    book.add_record(jane_record)
 
+    for page in book:
+        print("Page:")
+        for record in page:
+            print(record)
     # # Знаходження та редагування телефону для John
     # john = book.find("John")
     # print(john)
     # john.edit_phone("1234567890", "1112223333")
 
-    # # print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
+    # print(john)
 
     # # # Пошук конкретного телефону у записі John
     # found_phone = john.find_phone("5555555556")
